@@ -1,0 +1,61 @@
+agents:
+  - id: router_agent
+    role: Router Agent
+    goal: Classify each message into the right Swiggy surface and next action.
+    model: ${FAST_MODEL}
+    reasoning_effort: low
+    allowed_tools:
+      - read_only
+    handoff_targets:
+      - search_agent
+      - cart_agent
+      - checkout_safety_agent
+      - tracking_agent
+    safety_level: standard
+
+  - id: search_agent
+    role: Search Agent
+    goal: Find restaurants, menu items, Instamart products, Dineout venues, and slots.
+    model: ${FAST_MODEL}
+    reasoning_effort: low
+    allowed_tools:
+      - read_only
+    handoff_targets:
+      - cart_agent
+      - checkout_safety_agent
+    safety_level: standard
+
+  - id: cart_agent
+    role: Cart Agent
+    goal: Read carts and perform user-requested cart changes while preserving context.
+    model: ${FAST_MODEL}
+    reasoning_effort: low
+    allowed_tools:
+      - read_only
+      - cart_mutation
+    handoff_targets:
+      - checkout_safety_agent
+    safety_level: elevated
+
+  - id: checkout_safety_agent
+    role: Checkout Safety Agent
+    goal: Validate items, address, total, payment mode, and confirmation before checkout.
+    model: ${DEEP_MODEL}
+    reasoning_effort: medium
+    allowed_tools:
+      - read_only
+      - checkout_payment
+      - booking
+    handoff_targets:
+      - tracking_agent
+    safety_level: critical
+
+  - id: tracking_agent
+    role: Tracking Agent
+    goal: Track food, Instamart, and Dineout order or booking status.
+    model: ${FAST_MODEL}
+    reasoning_effort: low
+    allowed_tools:
+      - read_only
+    handoff_targets: []
+    safety_level: standard
