@@ -6,6 +6,7 @@ Swiggy-only Telegram bot powered by Swiggy MCP, FastAPI, CrewAI-style config-dri
 
 - Lets a Telegram user connect their own Swiggy account.
 - Supports Food, Instamart, and Dineout surfaces.
+- Understands simple natural food requests like `2 chapati and aloo gobi minimum rate`.
 - Routes commands through dynamic agents loaded from `config/agents.yaml`.
 - Calls Swiggy MCP over Streamable HTTP JSON-RPC.
 - Stores users, auth tokens, sessions, pending confirmations, audits, and order/cart snapshots in SQLite.
@@ -74,4 +75,4 @@ pytest
 python -m compileall src tests
 ```
 
-V1 is Telegram-only. WhatsApp and Zomato are intentionally out of scope for this first implementation.
+V1 is Swiggy-only and Telegram-only. Zomato is intentionally out of scope.

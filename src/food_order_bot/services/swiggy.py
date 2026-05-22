@@ -41,11 +41,20 @@ class SwiggyService:
         surface: SwiggySurface,
         address_id: str | None = None,
         city: str | None = None,
+        budget_preference: str | None = None,
     ) -> ServiceResult:
         tool, args = _search_tool(surface, query, address_id, city)
         self.orchestrator.assert_agent_can_call("search_agent", tool)
         result = await self._call(access_token, surface, tool, args)
-        return ServiceResult(_brief_result(f"{surface.value} search", result), result)
+        label = f"{surface.value} search"
+        message = _brief_result(label, result)
+        if budget_preference == "minimum_price":
+            message = (
+                "Budget preference detected. I searched with your location and food terms; "
+                "pick the lowest total after Swiggy returns live prices/fees.\n\n"
+                + message
+            )
+        return ServiceResult(message, result)
 
     async def menu_or_details(
         self,

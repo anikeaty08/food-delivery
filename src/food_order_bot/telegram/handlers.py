@@ -5,6 +5,7 @@ from sqlmodel import Session
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from food_order_bot.agents.food_request import FoodRequestAnalyzer
 from food_order_bot.auth.oauth import SwiggyOAuth
 from food_order_bot.mcp.client import McpError
 from food_order_bot.models import Provider, SwiggySurface
@@ -52,12 +53,13 @@ async def connect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await _reply(update, "I could not identify your Telegram user.")
         return
     try:
-        start_state = oauth.start_url(update.effective_user.id)
+        subject = f"tg:{update.effective_user.id}"
+        start_state = oauth.start_url(subject)
     except RuntimeError as exc:
         await _reply(update, f"OAuth is not configured yet: {exc}")
         return
     context.bot_data["oauth_states"][start_state.state] = {
-        "telegram_user_id": update.effective_user.id,
+        "subject": subject,
         "verifier": start_state.verifier,
     }
     await _reply(
@@ -136,7 +138,21 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if text.strip().upper() == CONFIRMATION_PHRASE:
         await _confirm_text(update, context, text)
         return
-    await _reply(update, "I'm command-based for v1. Use /help to see what I can do.")
+    request = FoodRequestAnalyzer().analyze(text)
+    if not request.is_order_like:
+        await _reply(update, "Tell me what food you want, or use /help.")
+        return
+    await _with_service(
+        update,
+        context,
+        "search",
+        request.surface,
+        {
+            "query": request.query,
+            "budget_preference": request.budget_preference,
+            "quantities": request.quantities,
+        },
+    )
 
 
 async def _confirm_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> None:
@@ -192,6 +208,7 @@ async def _with_service(
                     access_token=auth.access_token if auth else None,
                     query=payload["query"],
                     surface=surface,
+                    budget_preference=payload.get("budget_preference"),
                 )
             elif action == "menu":
                 result = await service.menu_or_details(
