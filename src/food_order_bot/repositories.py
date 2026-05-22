@@ -190,5 +190,11 @@ class AuditRepository:
         self.session = session
 
     def write(self, event_type: str, payload: dict[str, Any], user_id: int | None = None) -> None:
-        self.session.add(AuditLog(user_id=user_id, event_type=event_type, payload_json=json.dumps(payload)))
+        self.session.add(
+            AuditLog(
+                user_id=user_id,
+                event_type=event_type,
+                payload_json=json.dumps(payload),
+            )
+        )
         self.session.commit()

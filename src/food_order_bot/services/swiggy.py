@@ -4,7 +4,7 @@ from typing import Any
 
 from food_order_bot.agents.orchestrator import AgentOrchestrator
 from food_order_bot.mcp.client import McpClient, McpError
-from food_order_bot.models import SwiggySurface
+from food_order_bot.models import ConfirmationStatus, SwiggySurface
 from food_order_bot.safety.confirmation import ConfirmationGate
 from food_order_bot.settings import Settings
 
@@ -105,6 +105,8 @@ class SwiggyService:
         access_token: str | None,
         pending,
     ) -> ServiceResult:
+        if pending.status != ConfirmationStatus.CONFIRMED:
+            raise McpError("Checkout was not explicitly confirmed", code="CONFIRMATION_REQUIRED")
         self.orchestrator.assert_agent_can_call("checkout_safety_agent", pending.tool_name)
         args = self.confirmation_gate.pending_arguments(pending)
         result = await self._call(access_token, pending.surface, pending.tool_name, args)

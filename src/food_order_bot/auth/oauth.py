@@ -75,10 +75,15 @@ class SwiggyOAuth:
         response.raise_for_status()
         payload = response.json()
         expires_in = payload.get("expires_in")
+        expires_at = (
+            datetime.now(UTC) + timedelta(seconds=int(expires_in))
+            if expires_in
+            else None
+        )
         return OAuthToken(
             access_token=payload["access_token"],
             refresh_token=payload.get("refresh_token"),
-            expires_at=datetime.now(UTC) + timedelta(seconds=int(expires_in)) if expires_in else None,
+            expires_at=expires_at,
             scopes=payload.get("scope"),
         )
 

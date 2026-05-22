@@ -5,7 +5,6 @@ from sqlmodel import Session
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from food_order_bot.agents.orchestrator import AgentOrchestrator
 from food_order_bot.auth.oauth import SwiggyOAuth
 from food_order_bot.mcp.client import McpError
 from food_order_bot.models import Provider, SwiggySurface
@@ -19,7 +18,6 @@ from food_order_bot.repositories import (
 from food_order_bot.safety.confirmation import CONFIRMATION_PHRASE, ConfirmationGate
 from food_order_bot.services.swiggy import SwiggyService
 from food_order_bot.settings import Settings
-
 
 HELP_TEXT = f"""
 Swiggy Agent Bot
@@ -37,7 +35,10 @@ Checkout only runs after you reply exactly: {CONFIRMATION_PHRASE}
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await _reply(update, "Welcome. I can help you order from Swiggy with safety checks.\n\n" + HELP_TEXT)
+    await _reply(
+        update,
+        "Welcome. I can help you order from Swiggy with safety checks.\n\n" + HELP_TEXT,
+    )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -63,7 +64,8 @@ async def connect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         update,
         "Open this link to connect Swiggy:\n"
         f"{start_state.url}\n\n"
-        f"Callback URL must be whitelisted by Swiggy: {settings.public_base_url}/auth/swiggy/callback",
+        "Callback URL must be whitelisted by Swiggy: "
+        f"{settings.public_base_url}/auth/swiggy/callback",
     )
 
 
@@ -78,7 +80,11 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     surface, rest = _parse_surface_and_rest(context.args)
     if surface == SwiggySurface.INSTAMART:
-        await _reply(update, "Instamart menu/details is not a restaurant-menu flow. Use /search instamart <query>.")
+        await _reply(
+            update,
+            "Instamart menu/details is not a restaurant-menu flow. "
+            "Use /search instamart <query>.",
+        )
         return
     if not rest:
         await _reply(update, "Usage: /menu <food|dineout> <restaurant_id>")
@@ -130,7 +136,7 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if text.strip().upper() == CONFIRMATION_PHRASE:
         await _confirm_text(update, context, text)
         return
-    await _reply(update, "I’m command-based for v1. Use /help to see what I can do.")
+    await _reply(update, "I'm command-based for v1. Use /help to see what I can do.")
 
 
 async def _confirm_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> None:
@@ -194,7 +200,10 @@ async def _with_service(
                     item_id=payload["item_id"],
                 )
             elif action == "cart":
-                result = await service.cart(access_token=auth.access_token if auth else None, surface=surface)
+                result = await service.cart(
+                    access_token=auth.access_token if auth else None,
+                    surface=surface,
+                )
             elif action == "checkout":
                 result = await service.create_checkout_confirmation(
                     user_id=app_user.id,

@@ -1,48 +1,77 @@
-# Food Order Bot
+# Swiggy Agent Bot
 
-Telegram-first food ordering bot that can talk to Swiggy MCP and Zomato MCP through a shared provider layer.
+Swiggy-only Telegram bot powered by Swiggy MCP, FastAPI, CrewAI-style config-driven agents, OpenAI models, and SQLite.
 
-## Current MVP
+## What It Does
 
-- Telegram command flow.
-- Swiggy and Zomato MCP provider definitions.
-- Generic Streamable HTTP MCP client.
-- Per-chat session memory store.
-- OAuth route skeleton for provider login.
-- WhatsApp Cloud API webhook skeleton.
-- Checkout/order/payment calls require explicit confirmation.
+- Lets a Telegram user connect their own Swiggy account.
+- Supports Food, Instamart, and Dineout surfaces.
+- Routes commands through dynamic agents loaded from `config/agents.yaml`.
+- Calls Swiggy MCP over Streamable HTTP JSON-RPC.
+- Stores users, auth tokens, sessions, pending confirmations, audits, and order/cart snapshots in SQLite.
+- Blocks checkout/payment/booking until the user replies exactly `CONFIRM ORDER`.
 
 ## Setup
 
 ```bash
-npm install
-cp .env.example .env
-npm run dev
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e ".[dev]"
+copy .env.example .env
+uvicorn food_order_bot.main:app --reload --port 3000
 ```
 
-For Telegram, create a bot with BotFather and set `TELEGRAM_BOT_TOKEN`.
+CrewAI currently supports Python versions below 3.14. For the full agent runtime, use Python 3.11-3.13 and install:
 
-For provider access, request MCP developer access from Swiggy/Zomato. Until OAuth credentials are approved, you can test read flows with `DEV_SWIGGY_ACCESS_TOKEN` or `DEV_ZOMATO_ACCESS_TOKEN` if you have a temporary bearer token.
+```bash
+pip install -e ".[dev,agents]"
+```
+
+Required environment:
+
+```text
+OPENAI_API_KEY=
+TELEGRAM_BOT_TOKEN=
+PUBLIC_BASE_URL=http://localhost:3000
+SWIGGY_CLIENT_ID=
+SWIGGY_CLIENT_SECRET=
+DATABASE_URL=sqlite:///./data/bot.db
+AGENT_CONFIG_PATH=config/agents.yaml
+```
+
+For local MCP experiments only, `DEV_SWIGGY_ACCESS_TOKEN` can be used as a temporary fallback. Do not use it for real users.
 
 ## Telegram Commands
 
 ```text
 /start
-/providers
-/connect swiggy
-/connect zomato
-/search swiggy biryani in Bengaluru
-/menu swiggy <restaurant_id>
-/cart swiggy
-/checkout swiggy
-/confirm
+/connect
+/search food biryani
+/search instamart milk
+/search dineout italian
+/menu food <restaurant_id>
+/cart food
+/checkout food {"addressId":"home"}
+/track food <order_id>
 /cancel
+CONFIRM ORDER
 ```
 
-## Safety
+## Agent Config
 
-The bot never auto-confirms tools that can place orders, mutate carts, or trigger payment. Those calls create a pending action and require `/confirm`.
+Agents are not hardcoded into business logic. They are loaded from `config/agents.yaml` with:
 
-## Notes
+```text
+id, role, goal, model, reasoning_effort, allowed_tools, handoff_targets, safety_level
+```
 
-Zomato's public MCP manifest currently says third-party apps are not allowed without discussion. Treat this as a personal-use prototype until provider approval is granted.
+The orchestrator checks the registry before any MCP tool call. Read-only tools may retry. Cart mutation, checkout/payment, and booking tools do not auto-retry.
+
+## Development
+
+```bash
+pytest
+python -m compileall src tests
+```
+
+V1 is Telegram-only. WhatsApp and Zomato are intentionally out of scope for this first implementation.

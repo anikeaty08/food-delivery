@@ -1,7 +1,7 @@
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
-from food_order_bot.telegram import handlers
 from food_order_bot.settings import Settings
+from food_order_bot.telegram import handlers
 
 
 def build_telegram_app(settings: Settings) -> Application | None:
