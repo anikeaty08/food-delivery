@@ -136,7 +136,7 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if text.strip().upper() == CONFIRMATION_PHRASE:
         await _confirm_text(update, context, text)
         return
-    await _reply(update, "I’m command-based for v1. Use /help to see what I can do.")
+    await _reply(update, "I'm command-based for v1. Use /help to see what I can do.")
 
 
 async def _confirm_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> None:
