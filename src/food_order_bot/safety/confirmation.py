@@ -6,7 +6,6 @@ from food_order_bot.mcp.tools import ToolGroup, classify_tool
 from food_order_bot.models import PendingConfirmation
 from food_order_bot.repositories import ConfirmationRepository
 
-
 CONFIRMATION_PHRASE = "CONFIRM ORDER"
 
 

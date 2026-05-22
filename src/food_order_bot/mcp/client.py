@@ -100,7 +100,11 @@ class McpClient:
         payload = await _parse_mcp_response(response)
         if "error" in payload:
             err = payload["error"]
-            message = err.get("message", "Swiggy MCP returned an error") if isinstance(err, dict) else str(err)
+            message = (
+                err.get("message", "Swiggy MCP returned an error")
+                if isinstance(err, dict)
+                else str(err)
+            )
             raise McpError(message, details=err)
         result = payload.get("result", {})
         return result if isinstance(result, dict) else {"result": result}
@@ -127,7 +131,11 @@ async def _parse_mcp_response(response: httpx.Response) -> dict[str, Any]:
     if "text/event-stream" not in content_type:
         return response.json()
     for event in response.text.split("\n\n"):
-        data_lines = [line.removeprefix("data:").strip() for line in event.splitlines() if line.startswith("data:")]
+        data_lines = [
+            line.removeprefix("data:").strip()
+            for line in event.splitlines()
+            if line.startswith("data:")
+        ]
         if not data_lines:
             continue
         try:
